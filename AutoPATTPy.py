@@ -11,14 +11,32 @@ from ntpath import basename
 import io
 import os
 import pandas as pd
+import re
+from contextlib import contextmanager
 
+@contextmanager
+def enter_dir(newdir):
+    prevdir = os.getcwd()
+    try:
+        yield os.chdir(newdir) 
+    finally:
+        os.chdir(prevdir)
+        
+        
+@contextmanager
+def change_dir(newdir):
+    prevdir = os.getcwd()
+    try:
+        yield os.chdir(os.path.expanduser(newdir)) 
+    finally:
+        os.chdir(prevdir)
 
 # Class AutoPATT Session
 class AutoPATT(object):
     """
     Represents an AutoPATT csv output file in Python
     """
-    def __init__(self, sourcePath):
+    def __init__(self, source_path, legacy=False):
         """Instantiates an AutoPATT object with relevant data from the output.
         
         Output data are stored asattributes within the object. To access 
@@ -49,10 +67,10 @@ class AutoPATT(object):
             out_clusters: list of clusters (str) missing from cluster inventory
         """               
         # Attributes stored in the AutoPATT object
-        self.source = os.path.abspath(sourcePath)
-        self.name = basename(sourcePath)[:basename(sourcePath).rfind(".")]
+        self.source = os.path.abspath(source_path)
+        self.name = basename(source_path)[:basename(source_path).rfind(".")]
         self.file_location = '\\'.join(os.path.abspath(
-            sourcePath).split('\\')[:-1])                       
+            source_path).split('\\')[:-1])                       
         with io.open(self.source, mode='r', encoding='utf-8') as infile:            
             # Read source AutoPATT output file as a list of strings
             output = infile.readlines()
@@ -60,10 +78,13 @@ class AutoPATT(object):
             output = [i.replace('"', '') for i in output]
             output = [i for i in output if i]           
             # Use anchor rows to get row indices
-            i_sesrow_end = output.index('Analysis date:')-2
-            i_date = output.index('Analysis date:')+1
-            i_ver = output.index('Analysis date:')-2
-            i_lang = output.index('Analysis date:')-1
+            if legacy:
+                pass
+            else:
+                i_sesrow_end = output.index('Analysis date:')-2
+                i_date = output.index('Analysis date:')+1
+                i_ver = output.index('Analysis date:')-2
+                i_lang = output.index('Analysis date:')-1
             i_pt_inv_start = output.index('PHONETIC INVENTORY:')+2
             i_mp_start = output.index('Minimal Pairs:')+1
             i_pm_inv_start = output.index('PHONEMIC INVENTORY:')+2
@@ -74,19 +95,21 @@ class AutoPATT(object):
             i_pm_out = output.index('Phonemes to monitor:')+1
             i_cl_out = output.index('Clusters to monitor:')+1           
             # Derive attributes from AutoPATT output string            
-            self.output = output
-            self.version = float(output[i_ver].split(' ')[2])
-            self.lang = output[i_lang][output[i_lang].rfind(':')+2:]
-            # Separate rows with session information
-            sesrows = output[:i_sesrow_end]
-            sesrows = sesrows[1::2]
-            self.session = [x.split(',')[0] for x in sesrows]
-            self.corpus = [x.split(',')[1] for x in sesrows]
-
-            self.total_records = sum([int(x.split(',')[2]) for x in sesrows])            
-            self.records = [int(x.split(',')[2]) for x in sesrows]
-            self.analysis_date = output[i_date].split(' ')[0]
-            self.analysis_time = output[i_date].split(' ')[1]
+            self.output = output            
+            if legacy:
+                pass
+            else:
+                self.version = float(output[i_ver].split(' ')[2])
+                self.lang = output[i_lang][output[i_lang].rfind(':')+2:]
+                # Separate rows with session information
+                sesrows = output[:i_sesrow_end]
+                sesrows = sesrows[1::2]
+                self.session = [x.split(',')[0] for x in sesrows]
+                self.corpus = [x.split(',')[1] for x in sesrows]
+                self.total_records = sum([int(x.split(',')[2]) for x in sesrows])            
+                self.records = [int(x.split(',')[2]) for x in sesrows]
+                self.analysis_date = output[i_date].split(' ')[0]
+                self.analysis_time = output[i_date].split(' ')[1]
             # Get phonetic inventory
             phonetic_inv_rows = output[i_pt_inv_start:i_mp_start-2]
             self.phonetic_inv = [x.split(',')[1:] for x in phonetic_inv_rows]
@@ -110,12 +133,6 @@ class AutoPATT(object):
             self.out_phonemes = output[i_pm_out].split(',')
             # Get out clusters to monitor
             self.out_clusters = output[i_cl_out].split(',')           
-            # Warn user if unrecognized AutoPATT version
-            if self.version != 0.7:
-                print('*********************************************')
-                print(f'WARNING:AutoPATT version {self.version} csv detected.')
-                print('\tIntended for use with AutoPATT version 0.7')
-                print('*********************************************')
     
     def __repr__(self):
         return f'AutoPATT object {self.name}'
@@ -159,9 +176,66 @@ class AutoPATT(object):
         print(overlap_dict['overlap'])
         print(f'Unique {self.name}:')
         print(unique_dict[self.name+' unique'])
-        print(f'Unique {self.name}:')
+        print(f'Unique {other.name}:')
         print(unique_dict[other.name+' unique'])
         return overlap_dict, unique_dict
+    
+
+def import_files(directory):
+    """Imports a directory of AutoPATT outputs as a dict of AutoPATT objects.
+    
+    This is intended only for use with Spanish SSD Tx data folders."""
+    
+    autopatt_objs = {}
+    with change_dir(directory):
+        for f in os.listdir(directory):
+            if f.endswith('.csv'):
+                ID = re.findall('S\d\d\d', f)[0]
+                phase = re.findall('Pre|Post', f)[0]
+                autopatt_objs[ID+phase] = AutoPATT(f, legacy=True)
+    return autopatt_objs
+
+
+def compare_all():
+    """imports and compares a directory of AutoPATT outputs.
+    
+    This is intended only for use with Spanish SSD Tx data folders."""
+    
+    data = import_files(directory)
+    for variable in ['phonetic_inv', 'phonemic_inv', 'cluster_inv']:
+        data['S101Pre'].compare(data['S101Post'], variable)
+        data['S102Pre'].compare(data['S102Post'], variable)
+        data['S104Pre'].compare(data['S104Post'], variable)
+        data['S107Pre'].compare(data['S107Post'], variable)
+        data['S108Pre'].compare(data['S108Post'], variable)
+    return data
+        
+def compare_text(inv_left, inv_right):
+    """Compares two text inventories."""
+    inv_left = inv_left.replace(' ', '').split(',')
+    inv_right = inv_right.replace(' ', '').split(',')
+    overlap_dict = {'overlap':set()}
+    unique_dict = {'L unique':set(),'R unique':set()}
+    for x in inv_left:
+        if x in inv_right:
+            overlap_dict['overlap'].add(x)
+        else:
+            unique_dict['L unique'].add(x)
+    for x in inv_right:
+        if x not in inv_left:
+            unique_dict['R unique'].add(x)                
+    print('Overlap:')
+    print(overlap_dict['overlap'])
+    print(f'Unique L:')
+    print(unique_dict['L unique'])
+    print(f'Unique R:')
+    print(unique_dict['R unique'])
+    return overlap_dict, unique_dict        
+
+
+directory = 'G:\My Drive\Phonological Typologies Lab\Projects\Spanish SSD Tx\Data\Processed\ICPLA 2020_2021\AutoPATT'
+
+data = compare_all()
 
 
     
