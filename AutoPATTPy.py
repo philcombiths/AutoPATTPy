@@ -139,7 +139,7 @@ class AutoPATT(object):
     
     
     def var_to_df(self, var, label=None):
-        """Converts a variable to a pandas dataframe an AutoPATT object,
+        """Converts a variable to a pandas dataframe from an AutoPATT object,
         
         Args: 
             var: a string representing an AutoPATT attribute variable. See AutoPATT
