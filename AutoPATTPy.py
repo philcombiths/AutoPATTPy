@@ -6,13 +6,16 @@ Created on Thu Jul  2 14:43:03 2020
 
 Various functions for use with AutoPATT output
 """
-
+from tempfile import NamedTemporaryFile
 from ntpath import basename
 import io
 import os
 import pandas as pd
 import re
+import shutil
+import csv
 from contextlib import contextmanager
+
 
 @contextmanager
 def enter_dir(newdir):
@@ -30,6 +33,7 @@ def change_dir(newdir):
         yield os.chdir(os.path.expanduser(newdir)) 
     finally:
         os.chdir(prevdir)
+
 
 # Class AutoPATT Session
 class AutoPATT(object):
@@ -114,7 +118,7 @@ class AutoPATT(object):
             phonetic_inv_rows = output[i_pt_inv_start:i_mp_start-2]
             self.phonetic_inv = [x.split(',')[1:] for x in phonetic_inv_rows]
             self.phonetic_inv = [j for i in self.phonetic_inv for j in i]
-            self.phonetic_inv = [x for x in self.phonetic_inv if x != ' ']
+            self.phonetic_inv = [x for x in self.phonetic_inv if x.strip() != '']
             # Get minimal pairs
             self.minimal_pairs = output[i_mp_start:i_pm_inv_start-3]
             self.minimal_pairs = [x.split(',') for x in self.minimal_pairs]
@@ -122,7 +126,7 @@ class AutoPATT(object):
             phonemic_inv_rows = output[i_pm_inv_start:i_cl_inv-1]
             self.phonemic_inv = [x.split(',')[1:] for x in phonemic_inv_rows]
             self.phonemic_inv = [j for i in self.phonemic_inv for j in i]
-            self.phonemic_inv = [x for x in self.phonemic_inv if x != ' ']
+            self.phonemic_inv = [x for x in self.phonemic_inv if x.strip() != '']
             # Get cluster inventory
             self.cluster_inv = output[i_cl_inv].split(',')
             # Get targets
@@ -133,6 +137,7 @@ class AutoPATT(object):
             self.out_phonemes = output[i_pm_out].split(',')
             # Get out clusters to monitor
             self.out_clusters = output[i_cl_out].split(',')           
+
     
     def __repr__(self):
         return f'AutoPATT object {self.name}'
@@ -156,7 +161,8 @@ class AutoPATT(object):
         if isinstance(attribute, list):
             df = pd.Series(attribute, name=label)
         return df
-            
+
+
     def compare(self, other, var):
         """Compares inventories of two AutoPATT objects."""
         attr_left = getattr(self, var)
@@ -180,36 +186,7 @@ class AutoPATT(object):
         print(unique_dict[other.name+' unique'])
         return overlap_dict, unique_dict
     
-
-def import_files(directory):
-    """Imports a directory of AutoPATT outputs as a dict of AutoPATT objects.
-    
-    This is intended only for use with Spanish SSD Tx data folders."""
-    
-    autopatt_objs = {}
-    with change_dir(directory):
-        for f in os.listdir(directory):
-            if f.endswith('.csv'):
-                ID = re.findall('S\d\d\d', f)[0]
-                phase = re.findall('Pre|Post', f)[0]
-                autopatt_objs[ID+phase] = AutoPATT(f, legacy=True)
-    return autopatt_objs
-
-
-def compare_all():
-    """imports and compares a directory of AutoPATT outputs.
-    
-    This is intended only for use with Spanish SSD Tx data folders."""
-    
-    data = import_files(directory)
-    for variable in ['phonetic_inv', 'phonemic_inv', 'cluster_inv']:
-        data['S101Pre'].compare(data['S101Post'], variable)
-        data['S102Pre'].compare(data['S102Post'], variable)
-        data['S104Pre'].compare(data['S104Post'], variable)
-        data['S107Pre'].compare(data['S107Post'], variable)
-        data['S108Pre'].compare(data['S108Post'], variable)
-    return data
-        
+  
 def compare_text(inv_left, inv_right):
     """Compares two text inventories."""
     inv_left = inv_left.replace(' ', '').split(',')
@@ -230,12 +207,122 @@ def compare_text(inv_left, inv_right):
     print(unique_dict['L unique'])
     print(f'Unique R:')
     print(unique_dict['R unique'])
-    return overlap_dict, unique_dict        
+    return overlap_dict, unique_dict  
 
 
-directory = 'G:\My Drive\Phonological Typologies Lab\Projects\Spanish SSD Tx\Data\Processed\ICPLA 2020_2021\AutoPATT'
+def csv_repair(source_path):
+    """Adds an empty minimal pairs section to an AutoPATT output csv."""
+    tempfile = NamedTemporaryFile('w+t', newline='', encoding='utf-8', delete=False)
+    with open(source_path, mode='r', encoding='utf-8') as file, tempfile:
+        reader = csv.reader(file, delimiter=',', )
+        writer = csv.writer(tempfile, delimiter=',')        
+        phonetic_inv_passed=False
+        blanks_passed=0
+        rows_added=False
+        for i, row in enumerate(reader):
+            # Get number of columns
+            if i == 0:
+                num_cols = len(row)
+            if row[0] == 'PHONETIC INVENTORY:':
+                phonetic_inv_passed=True
+            # Identify row immediately prior to insertion point
+            if row[0] == '' and phonetic_inv_passed:
+                blanks_passed+=1
+                writer.writerow(row)
+                continue
+            if blanks_passed == 2 and not rows_added:
+                # Check for existence of 'Minimal Pairs' row
+                if row[0] == 'Minimal Pairs:':
+                    tempfile.close()
+                    os.remove(tempfile.name)
+                    return
+                # Add inserted rows
+                else:
+                    writer.writerow(['Minimal Pairs:']+['']*(num_cols-1))
+                    writer.writerow(['']*num_cols)
+                    writer.writerow(['']*num_cols)
+                    rows_added=True
+                    writer.writerow(row)
+                    continue
+            writer.writerow(row)        
+        tempfile.close()
+        shutil.move(tempfile.name, source_path)        
+    return   
+    pass
 
-data = compare_all()
+
+def dir_csv_repair(directory):
+    """runs csv_repair() on all csv files in a directory."""
+    with change_dir(directory):
+        for f in os.listdir(directory):
+            if f.endswith('.csv'):
+                csv_repair(f)
+    return
+            
+
+
+def import_files(directory, legacy=False, minimal_pairs=True):
+    """Imports a directory of AutoPATT outputs as a dict of AutoPATT objects."""    
+    autopatt_objs = {}
+    with change_dir(directory):
+        for f in os.listdir(directory):
+            if f.endswith('.csv'):
+                ID = f.replace('.csv', '')
+#                
+# Add dummy minimal pairs when specified
+#                if not minimal_pairs:
+#                    # use CSV edit fx
+                    
+                
+                autopatt_objs[ID] = AutoPATT(f, legacy=legacy)
+    return autopatt_objs    
+
+
+
+###
+###
+### Specialized functions for Spanish SSD Tx Study.
+###
+###
+    
+
+def import_files_SpTx(directory):
+    """Imports a directory of AutoPATT outputs as a dict of AutoPATT objects.
+    
+    This is intended only for use with Spanish SSD Tx data folders."""
+    
+    autopatt_objs = {}
+    with change_dir(directory):
+        for f in os.listdir(directory):
+            if f.endswith('.csv'):
+                ID = re.findall('S\d\d\d', f)[0]
+                phase = re.findall('Pre|Post', f)[0]
+                autopatt_objs[ID+phase] = AutoPATT(f, legacy=True)
+    return autopatt_objs
+
+
+def compare_all_SpTx():
+    """imports and compares a directory of AutoPATT outputs.
+    
+    This is intended only for use with Spanish SSD Tx data folders."""
+    
+    data = import_files_SpTx(directory)
+    for variable in ['phonetic_inv', 'phonemic_inv', 'cluster_inv']:
+        data['S101Pre'].compare(data['S101Post'], variable)
+        data['S102Pre'].compare(data['S102Post'], variable)
+        data['S104Pre'].compare(data['S104Post'], variable)
+        data['S107Pre'].compare(data['S107Post'], variable)
+        data['S108Pre'].compare(data['S108Post'], variable)
+    return data      
+
+# Testing
+
+directory_repair = r'G:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\Manual PATT Data - Copy'
+directory_test = r'G:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\test'
+
+#dir_csv_repair(directory_repair)
+data = import_files(directory_repair, legacy=True)
+
 
 
     
