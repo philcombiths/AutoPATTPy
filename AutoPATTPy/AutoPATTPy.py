@@ -221,7 +221,7 @@ def import_files(directory, legacy=False, minimal_pairs_repair=False):
                                adjustments for manually generated output. 
                                WARNING: THIS MODIFIES THE ORIGINAL FILES.
     
-    
+    Returns dictionary of AutoPATT objects
     """    
     autopatt_objs = {}
     with change_dir(directory):
@@ -242,16 +242,23 @@ def import_files(directory, legacy=False, minimal_pairs_repair=False):
     return autopatt_objs    
 
 
+def gen_output(autopatt_dict_left, autopatt_dict_right):
+    """"Generates a dataframe with columns for two sets of AutoPATT data"""
+    
 ###
 ###
 ### Testing
 ###
 ###
-
-directory_repair = r'G:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\Manual PATT Data - Copy'
-directory_test = r'G:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\test'
-##dir_csv_repair(directory_repair)
-data = import_files(directory_repair, legacy=True)
+if __name__ == '__main__':
+    
+    #directory_repair = r'G:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\Manual PATT Data - Copy'
+    #directory_test = r'G:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\test'
+    #data = import_files(directory_repair, legacy=True)
+    dir_manual = r'G:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\Manual PATT Data\Manual PATT Data - Corrected'
+    dir_auto = r'G:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\AutoPATT Data'
+    data_manual = import_files(dir_manual, legacy=True)
+    data_auto = import_files(dir_auto, legacy=True)
 
 
 
