@@ -5,6 +5,13 @@ Created on Thu Jul  2 14:43:03 2020
 @author: Philip
 
 Various functions for use with AutoPATT output
+
+Use example, csv_repair
+# For use with edited or manually generated output to match format of AutoPATT
+# generated output
+dir_csv_repair(directory_to_repair)
+data = import_files(repaired_directory, legacy=True)
+
 """
 from tempfile import NamedTemporaryFile
 from ntpath import basename
@@ -278,7 +285,6 @@ def import_files(directory, legacy=False, minimal_pairs=True):
     return autopatt_objs    
 
 
-
 ###
 ###
 ### Specialized functions for Spanish SSD Tx Study.
@@ -314,13 +320,15 @@ def compare_all_SpTx():
         data['S107Pre'].compare(data['S107Post'], variable)
         data['S108Pre'].compare(data['S108Post'], variable)
     return data      
-
-# Testing
+###
+###
+### Testing
+###
+###
 
 directory_repair = r'G:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\Manual PATT Data - Copy'
 directory_test = r'G:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\test'
-
-#dir_csv_repair(directory_repair)
+dir_csv_repair(directory_repair)
 data = import_files(directory_repair, legacy=True)
 
 
