@@ -20,6 +20,7 @@ def file_rename(directory, filetypes=None, filetypes_exclude=('.ini'),
         filename_splitter : str of splitter to use for truncating.
         truncate_index : int index of splitter to use for truncating.
     """    
+    
     with change_dir(directory):
         for file in os.listdir(directory):
             # Skip excluded filetypes
@@ -43,5 +44,6 @@ def file_rename(directory, filetypes=None, filetypes_exclude=('.ini'),
 
 
 if __name__=='__main__':
+    ### Testing ###
     directory = r'G:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\AutoPATT Data'
     file_rename(directory, '.csv')
