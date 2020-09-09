@@ -158,26 +158,31 @@ class AutoPATT(object):
 
 
     def compare(self, other, var):
-        """Compares inventories of two AutoPATT objects."""
+        """
+        Compares inventories of two AutoPATT objects.
+        Parameters:
+            other : AutoPATT object to compare with self.
+            var : AutoPATT object variable to be compared.
+        """
         attr_left = getattr(self, var)
         attr_right = getattr(other, var)
         
         overlap_dict = {'overlap':set()}
-        unique_dict = {self.name+' unique':set(), other.name+' unique':set()}
+        unique_dict = {self.name+' L unique':set(), other.name+' R unique':set()}
         for x in attr_left:
             if x in attr_right:
                 overlap_dict['overlap'].add(x)
             else:
-                unique_dict[self.name+' unique'].add(x)
+                unique_dict[self.name+' L unique'].add(x)
         for x in attr_right:
             if x not in attr_left:
-                unique_dict[other.name+' unique'].add(x)                
+                unique_dict[other.name+' R unique'].add(x)                
         print('Overlap:')
         print(overlap_dict['overlap'])
-        print(f'Unique {self.name}:')
-        print(unique_dict[self.name+' unique'])
-        print(f'Unique {other.name}:')
-        print(unique_dict[other.name+' unique'])
+        print(f'Unique L {self.name}:')
+        print(unique_dict[self.name+' L unique'])
+        print(f'Unique R {other.name}:')
+        print(unique_dict[other.name+' R unique'])
         return overlap_dict, unique_dict
     
   
@@ -204,8 +209,28 @@ def compare_text(inv_left, inv_right):
     print(unique_dict['L unique'])
     print(f'Unique R:')
     print(unique_dict['R unique'])
-    return overlap_dict, unique_dict  
-            
+    return overlap_dict, unique_dict
+
+def compare_all(dict_left, dict_right):
+    """
+    Compares all AutoPATT analysis results for two dictionaries of AutoPATT
+    objects. Compared dictionaries must have identical keys.
+    
+    Returns dictionary of compared results.
+    """
+    
+    analysis_list = ['phonetic_inv', 'phonemic_inv', 'cluster_inv', 
+                     'out_phones', 'out_phonemes', 'out_clusters', 'targets']
+    all_results = {}
+    
+    for analysis in analysis_list:        
+        comparison_result = {}    
+        for key in dict_left.keys():
+            result = dict_left[key].compare(dict_right[key], 'phonetic_inv')
+            comparison_result[key] = result
+        all_results[analysis] = comparison_result
+    return all_results
+
 
 def import_files(directory, legacy=False, minimal_pairs_repair=False):
     """
@@ -223,6 +248,7 @@ def import_files(directory, legacy=False, minimal_pairs_repair=False):
     
     Returns dictionary of AutoPATT objects
     """    
+    
     autopatt_objs = {}
     with change_dir(directory):
         # First repair output if minimual_pairs_repair specified
@@ -245,11 +271,13 @@ def import_files(directory, legacy=False, minimal_pairs_repair=False):
 def gen_output(autopatt_dict_left, autopatt_dict_right):
     """"Generates a dataframe with columns for two sets of AutoPATT data"""
     
+    
 ###
 ###
 ### Testing
 ###
 ###
+    
 if __name__ == '__main__':
     
     #directory_repair = r'G:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\Manual PATT Data - Copy'
@@ -257,10 +285,18 @@ if __name__ == '__main__':
     #data = import_files(directory_repair, legacy=True)
     dir_manual = r'G:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\Manual PATT Data\Manual PATT Data - Corrected'
     dir_auto = r'G:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\AutoPATT Data'
+
+    # Compare AutoPATT Results
     data_manual = import_files(dir_manual, legacy=True)
     data_auto = import_files(dir_auto, legacy=True)
+    all_results = compare_all(data_manual, data_auto)
+    
+    # TO Do
+    # arrange comparison data in a format I can work with.
 
+       
 
+# add to comparison result dict
 
 
     
