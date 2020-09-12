@@ -189,23 +189,24 @@ class AutoPATT(object):
         attr_left = getattr(self, var)
         attr_right = getattr(other, var)
         
-        overlap_dict = {'overlap':set()}
-        unique_dict = {self.name+' L unique':set(), other.name+' R unique':set()}
+        result_dict = {'overlap':[], 
+                       self.name+' L unique':[], 
+                       other.name+' R unique':[]}
         for x in attr_left:
             if x in attr_right:
-                overlap_dict['overlap'].add(x)
+                result_dict['overlap'].append(x)
             else:
-                unique_dict[self.name+' L unique'].add(x)
+                result_dict[self.name+' L unique'].append(x)
         for x in attr_right:
             if x not in attr_left:
-                unique_dict[other.name+' R unique'].add(x)                
+                result_dict[other.name+' R unique'].append(x)                
         print('Overlap:')
-        print(overlap_dict['overlap'])
+        print(result_dict['overlap'])
         print(f'Unique L {self.name}:')
-        print(unique_dict[self.name+' L unique'])
+        print(result_dict[self.name+' L unique'])
         print(f'Unique R {other.name}:')
-        print(unique_dict[other.name+' R unique'])
-        return overlap_dict, unique_dict
+        print(result_dict[other.name+' R unique'])
+        return result_dict
     
   
 def compare_text(inv_left, inv_right):
@@ -215,23 +216,22 @@ def compare_text(inv_left, inv_right):
     """
     inv_left = inv_left.replace(' ', '').split(',')
     inv_right = inv_right.replace(' ', '').split(',')
-    overlap_dict = {'overlap':set()}
-    unique_dict = {'L unique':set(),'R unique':set()}
+    result_dict = {'overlap':[], 'L unique':[], 'R unique':[]}
     for x in inv_left:
         if x in inv_right:
-            overlap_dict['overlap'].add(x)
+            result_dict['overlap'].append(x)
         else:
-            unique_dict['L unique'].add(x)
+            result_dict['L unique'].append(x)
     for x in inv_right:
         if x not in inv_left:
-            unique_dict['R unique'].add(x)                
+            result_dict['R unique'].append(x)                
     print('Overlap:')
-    print(overlap_dict['overlap'])
+    print(result_dict['overlap'])
     print(f'Unique L:')
-    print(unique_dict['L unique'])
+    print(result_dict['L unique'])
     print(f'Unique R:')
-    print(unique_dict['R unique'])
-    return overlap_dict, unique_dict
+    print(result_dict['R unique'])
+    return result_dict
 
 
 def compare_all(dict_left, dict_right):
@@ -318,18 +318,11 @@ if __name__ == '__main__':
     
     P1049 = AutoPATT(r"G:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\test\1049.csv", legacy=True, robust=True)
     P1007 = AutoPATT(r"G:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\test\1007_PKP_Pre_AutoPATT_v1_4.csv", legacy=True)
-
-    
     
     # TO Do
     # arrange comparison data in a format I can work with.
 
-       
 
-# add to comparison result dict
-
-
-    
     
     
         
