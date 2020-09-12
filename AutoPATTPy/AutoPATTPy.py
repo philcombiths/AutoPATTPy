@@ -25,6 +25,7 @@ from ntpath import basename
 import io
 import os
 import pandas as pd
+import regex as re
 from contextmanager import enter_dir, change_dir
 from csv_repair import dir_csv_repair
 
@@ -34,12 +35,20 @@ class AutoPATT(object):
     """
     Represents an AutoPATT csv output file in Python
     """
-    def __init__(self, source_path, legacy=False):
+    def __init__(self, source_path, legacy=False, robust=False):
         """Instantiates an AutoPATT object with relevant data from the output.
         
-        Output data are stored asattributes within the object. To access 
-            attributes, use AUTOPATT-OBJECT.ATTR-NAME. For example: 
-            myAutoPATTsession.out_phones
+        Parameters:
+            source_path : str, path to source AutoPATT output file
+            legacy : bool, set to True for compatibility with AutoPATT output
+                 < v0.7. Set to to False for compatibility with >= v0.7. 
+                 Default = False
+            robust : bool, set to True to coerce some nonstandard IPA elements 
+                     to standard IPA. Default=False
+        
+        Note: Output data are stored as attributes within the object. To access 
+              attributes, use AUTOPATT-OBJECT.ATTR-NAME. For example: 
+              myAutoPATTsession.out_phones
         
         Attributes:
             source: (str) absolute path to source AutoPATT output file
@@ -109,12 +118,12 @@ class AutoPATT(object):
                 self.analysis_date = output[i_date].split(' ')[0]
                 self.analysis_time = output[i_date].split(' ')[1]
             # Get phonetic inventory
-            phonetic_inv_rows = output[i_pt_inv_start:i_mp_start-2]
+            phonetic_inv_rows = output[i_pt_inv_start:i_mp_start-1]
             self.phonetic_inv = [x.split(',')[1:] for x in phonetic_inv_rows]
             self.phonetic_inv = [j for i in self.phonetic_inv for j in i]
             self.phonetic_inv = [x for x in self.phonetic_inv if x.strip() != '']
             # Get minimal pairs
-            self.minimal_pairs = output[i_mp_start:i_pm_inv_start-3]
+            self.minimal_pairs = output[i_mp_start:i_pm_inv_start-2]
             self.minimal_pairs = [x.split(',') for x in self.minimal_pairs]
             # Get phonemic inventory
             phonemic_inv_rows = output[i_pm_inv_start:i_cl_inv-1]
@@ -130,8 +139,21 @@ class AutoPATT(object):
             # Get out phonemes to monitor
             self.out_phonemes = output[i_pm_out].split(',')
             # Get out clusters to monitor
-            self.out_clusters = output[i_cl_out].split(',')           
-
+            self.out_clusters = output[i_cl_out].split(',')            
+            # Robust setting coerces nonstandard IPA elements to standard IPA
+            if robust:
+                att_list = [self.phonetic_inv, self.minimal_pairs, 
+                            self.phonemic_inv, self.cluster_inv, self.targets,
+                            self.out_phones, self.out_phonemes, self.out_clusters]
+                for i, att in enumerate(att_list):
+                    for num, x in enumerate(att_list[i]):
+                        try:                                              
+                            att_list[i][num] = att_list[i][num].replace('g', 'ɡ')
+                # Replacements for minimal pairs
+                        except AttributeError: 
+                            for ix, word in enumerate(att_list[i][num]):
+                                att_list[i][num][ix] = att_list[i][num][ix].replace('g', 'ɡ')
+                            
     
     def __repr__(self):
         return f'AutoPATT object {self.name}'
@@ -211,6 +233,7 @@ def compare_text(inv_left, inv_right):
     print(unique_dict['R unique'])
     return overlap_dict, unique_dict
 
+
 def compare_all(dict_left, dict_right):
     """
     Compares all AutoPATT analysis results for two dictionaries of AutoPATT
@@ -232,7 +255,7 @@ def compare_all(dict_left, dict_right):
     return all_results
 
 
-def import_files(directory, legacy=False, minimal_pairs_repair=False):
+def import_files(directory, legacy=False, minimal_pairs_repair=False, robust=False):
     """
     Imports a directory of AutoPATT outputs as a dict of AutoPATT objects.
     
@@ -245,6 +268,8 @@ def import_files(directory, legacy=False, minimal_pairs_repair=False):
                                dummy minimal pairs section and other
                                adjustments for manually generated output. 
                                WARNING: THIS MODIFIES THE ORIGINAL FILES.
+        robust : bool, set to True to coerce some nonstandard IPA elements 
+                 to standard IPA. Default=False
     
     Returns dictionary of AutoPATT objects
     """    
@@ -263,7 +288,7 @@ def import_files(directory, legacy=False, minimal_pairs_repair=False):
         for f in os.listdir(directory):
             if f.endswith('.csv'):
                 ID = f.replace('.csv', '')                           
-                autopatt_objs[ID] = AutoPATT(f, legacy=legacy)
+                autopatt_objs[ID] = AutoPATT(f, legacy=legacy, robust=robust)
     print('AutoPATT objects added to dictionary')
     return autopatt_objs    
 
@@ -287,9 +312,14 @@ if __name__ == '__main__':
     dir_auto = r'G:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\AutoPATT Data'
 
     # Compare AutoPATT Results
-    data_manual = import_files(dir_manual, legacy=True)
+    data_manual = import_files(dir_manual, legacy=True, robust=True)
     data_auto = import_files(dir_auto, legacy=True)
     all_results = compare_all(data_manual, data_auto)
+    
+    P1049 = AutoPATT(r"G:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\test\1049.csv", legacy=True, robust=True)
+    P1007 = AutoPATT(r"G:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\test\1007_PKP_Pre_AutoPATT_v1_4.csv", legacy=True)
+
+    
     
     # TO Do
     # arrange comparison data in a format I can work with.
