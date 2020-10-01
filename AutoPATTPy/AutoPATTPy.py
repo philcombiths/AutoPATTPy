@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 
-
-Created on Thu Jul  2 14:43:03 2020
-@author: Philip
-
 Various functions for use with AutoPATT output
 
 # Use example: AutoPATT class
@@ -18,6 +14,9 @@ data = import_files(directory_of_outputs, legacy=False)
 # For use with edited or manually generated output to match format of AutoPATT
 # generated output
 data = import_files(directory_needing_repair, legacy=True)
+
+Created on Thu Jul  2 14:43:03 2020
+@author: Philip
 
 """
 
