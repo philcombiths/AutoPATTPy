@@ -24,6 +24,7 @@ data = import_files(directory_needing_repair, legacy=True)
 from ntpath import basename
 import io
 import os
+import pandas as pd
 from contextmanager import enter_dir, change_dir
 from csv_repair import dir_csv_repair
 
