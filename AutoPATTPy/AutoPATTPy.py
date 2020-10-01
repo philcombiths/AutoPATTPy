@@ -24,8 +24,6 @@ data = import_files(directory_needing_repair, legacy=True)
 from ntpath import basename
 import io
 import os
-import pandas as pd
-import regex as re
 from contextmanager import enter_dir, change_dir
 from csv_repair import dir_csv_repair
 
@@ -44,7 +42,8 @@ class AutoPATT(object):
                  < v0.7. Set to to False for compatibility with >= v0.7. 
                  Default = False
             robust : bool, set to True to coerce some nonstandard IPA elements 
-                     to standard IPA. Default=False
+                     to standard IPA. This parameter is not fully tested. 
+                     Default = False
         
         Note: Output data are stored as attributes within the object. To access 
               attributes, use AUTOPATT-OBJECT.ATTR-NAME. For example: 
@@ -298,7 +297,10 @@ def import_files(directory, legacy=False, minimal_pairs_repair=False, robust=Fal
 
 
 def gen_output(autopatt_dict_left, autopatt_dict_right):
-    """"Generates a dataframe with columns for two sets of AutoPATT data"""
+    """"
+    Generates a dataframe with columns for two sets of AutoPATT data. 
+    Not currently implemented
+    """
     
     
 ###
@@ -309,70 +311,8 @@ def gen_output(autopatt_dict_left, autopatt_dict_right):
     
 if __name__ == '__main__':
     
-    #directory_repair = r'G:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\Manual PATT Data - Copy'
-    #directory_test = r'G:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\test'
-    #data = import_files(directory_repair, legacy=True)
-    dir_manual = r'E:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\Manual PATT Data\Manual PATT Data - Corrected'
-    dir_auto = r'E:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\AutoPATT Data'
+    pass
 
-    # Compare AutoPATT Results
-    data_manual = import_files(dir_manual, legacy=True, robust=True)
-    data_auto = import_files(dir_auto, legacy=True)
-    # Manual = L, Auto = R
-    all_results = compare_all(data_manual, data_auto)
-    
-    P1049_auto = AutoPATT(r"E:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\AutoPATT Data\1049.csv", legacy=True, robust=False)
-    P1049 = AutoPATT(r"E:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\test\1049.csv", legacy=True, robust=True)
-    P1007 = AutoPATT(r"E:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\test\1007_PKP_Pre_AutoPATT_v1_4.csv", legacy=True)
-    
-    # TO Do
-    # arrange comparison data in a format I can work with.
-    
-    # Create dataframe for each 
-        
-    # For each analysis
-    
-    # Create full empty DF      
-    results_df = pd.DataFrame(index=[i for i in all_results.keys()], columns=[i for i in all_results['phonetic_inv'].keys()])
-
-    for type_key in all_results.keys():
-        for ID_key in all_results[type_key].keys():            
-            results_df.at[type_key, ID_key] = all_results[type_key][ID_key]
-            
-    # Create mismatch DF
-    mismatch_df = pd.DataFrame(index=[i for i in all_results.keys()], columns=[i for i in all_results['phonetic_inv'].keys()])
-    for type_key in all_results.keys():
-        for ID_key in all_results[type_key].keys():            
-            # Skip items with no errors
-            if len(all_results[type_key][ID_key][f"{ID_key} L unique"]) == 0:
-                if len(all_results[type_key][ID_key][f"{ID_key} R unique"]) == 0:
-                    continue
-            L_mismatch = all_results[type_key][ID_key][f"{ID_key} L unique"]
-            R_mismatch = all_results[type_key][ID_key][f"{ID_key} R unique"]
-            mismatch_df.at[type_key, ID_key] = [L_mismatch, R_mismatch]
-            
-    # Create wider DF
-        index_names = []
-    for tri in zip([i for i in all_results.keys()], 
-                    [i+'_AUTO_omit' for i in all_results.keys()],
-                    [i+'_AUTO_add' for i in all_results.keys()]):
-        index_names += tri
-        
-    wider_df = pd.DataFrame(index=index_names, columns=[i for i in all_results['phonetic_inv'].keys()])
-    for type_key in all_results.keys():
-        for append in ['', '_AUTO_omit', '_AUTO_add']:            
-            for ID_key in all_results[type_key].keys():       
-                if append == '':
-                    index = 'overlap'
-                if append == '_AUTO_omit':
-                    index = f'{ID_key} L unique'
-                if append == '_AUTO_add':
-                    index = f'{ID_key} R unique'
-                wider_df.at[type_key+append, ID_key] = all_results[type_key][ID_key][index]
-            
-    
-    # Export to CSV
-    # mismatch_df.to_csv('mismatch_data.csv',encoding='utf-8')
 
     
     
