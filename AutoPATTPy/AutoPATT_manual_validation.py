@@ -9,11 +9,14 @@ Created on Thu Oct  1 15:37:51 2020
 
 """
 import pandas as pd
+import ast
 from AutoPATTPy import import_files, compare_all
 
 def validation_proj_data(dir_manual_data, dir_auto_data): 
 
-    """Exports data in three formats as csv files to this file's directory."""
+    """
+    Exports comparison data in three formats as csv files to this file's directory.
+    """
     
     # Set data directories
     dir_manual = dir_manual_data
@@ -66,14 +69,46 @@ def validation_proj_data(dir_manual_data, dir_auto_data):
     mismatch_df.to_csv('mismatch_data.csv',encoding='utf-8')
     wider_df.to_csv('wider_data.csv',encoding='utf-8')
     return all_results, data_manual, data_auto
+
+def intake_comparison_overlap(comparison_overlap_path):
+    """
+    imports a csv with analyses overlap labels as index and participant IDs
+    as column labels. Data are lists of elements overlapping across manual
+    and AutoPATT data.
+    """
+    # Import raw data
+    raw_df = pd.read_csv(comparison_overlap_path, encoding='utf-8', index_col=0)
+    
+    # Convert
+    long_tuples = []
+    for col in raw_df.iteritems():
+        for cell in col[1].iteritems():           
+            pass
+            try:    
+                overlap = ast.literal_eval(cell[1])
+            except ValueError:
+                error_col = col
+                error_cell = cell
+                print(f"ERROR: {cell[1]}")
+            for element in overlap:
+                cur_tuple = (col[0], cell[0], element)
+                long_tuples.append(cur_tuple)
+
+    new_df = pd.DataFrame(long_tuples, columns=['ID', 'analysis', 'IPA'])
+    new_df.set_index(['ID', 'analysis'], inplace=True)
+    new_df.to_csv('overlap_data_long.csv', encoding='utf-8')
+    return new_df
     
 ###
 # Use Case
 ###
 
-dir_manual_data = r'E:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\Manual PATT Data\Manual PATT Data - Corrected'
-dir_auto_data = r'E:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\AutoPATT Data'
-all_results, data_manual, data_auto = validation_proj_data(dir_manual_data, dir_auto_data)
+# dir_manual_data = r'E:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\Manual PATT Data\Manual PATT Data - Corrected'
+# dir_auto_data = r'E:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\AutoPATT Data'
+# all_results, data_manual, data_auto = validation_proj_data(dir_manual_data, dir_auto_data)
 
-test1 = data_auto['1676']
-test3 = data_auto['1713']
+# test1 = data_auto['1676']
+# test3 = data_auto['1713']
+
+comparison_overlap_path = "E:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\Processed Data\manual_edits\overlap_comparison_data.csv"
+overlap_data_long = intake_comparison_overlap(comparison_overlap_path)
