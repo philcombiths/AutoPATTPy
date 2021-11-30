@@ -103,12 +103,16 @@ def intake_comparison_overlap(comparison_overlap_path):
 # Use Case
 ###
 
-# dir_manual_data = r'E:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\Manual PATT Data\Manual PATT Data - Corrected'
-# dir_auto_data = r'E:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\AutoPATT Data'
-# all_results, data_manual, data_auto = validation_proj_data(dir_manual_data, dir_auto_data)
+## validation_proj_data()
+dir_manual_data = r'E:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\Manual PATT Data\Manual PATT Data - Corrected'
+dir_auto_data = r'E:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\AutoPATT Data'
+all_results, data_manual, data_auto = validation_proj_data(dir_manual_data, dir_auto_data)
 
 # test1 = data_auto['1676']
 # test3 = data_auto['1713']
 
-comparison_overlap_path = "E:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\Processed Data\manual_edits\overlap_comparison_data.csv"
-overlap_data_long = intake_comparison_overlap(comparison_overlap_path)
+### intake_comparison_overlap()
+# comparison_overlap_path = "E:\My Drive\Phonological Typologies Lab\Projects\AutoPATT\Manual PATT Validation\Processed Data\manual_edits\overlap_comparison_data.csv"
+# overlap_data_long = intake_comparison_overlap(comparison_overlap_path)
+
+
