@@ -6,7 +6,7 @@ for the Spanish SSD Tx Study. Compares pre/post analyses.
 @author: Philip Combiths
 
 # Example use:
-directory = r'G:\My Drive\Phonological Typologies Lab\Projects\Spanish SSD Tx\Data\Processed\ICPLA 2020_2021\AutoPATT'
+directory = r'E:\My Drive\Phonological Typologies Lab\Projects\Spanish SSD Tx\Data\Processed\ICPLA 2020_2021\AutoPATT'
 Sp_data = compare_all_SpTx(directory)
 """
 
@@ -50,5 +50,5 @@ def compare_all_SpTx(directory):
         data['S108Pre'].compare(data['S108Post'], variable)
     return data
 
-directory = r'G:\My Drive\Phonological Typologies Lab\Projects\Spanish SSD Tx\Data\Processed\ICPLA 2020_2021\AutoPATT'
+directory = r'E:\My Drive\Phonological Typologies Lab\Projects\Spanish SSD Tx\Data\Processed\ICPLA 2020_2021\AutoPATT'
 Sp_data = compare_all_SpTx(directory)
