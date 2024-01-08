@@ -20,12 +20,14 @@ Created on Thu Jul  2 14:43:03 2020
 
 """
 
-from ntpath import basename
 import io
 import os
+from ntpath import basename
+
 import pandas as pd
-from contextmanager import enter_dir, change_dir
+from contextmanager import change_dir, enter_dir
 from csv_repair import dir_csv_repair
+
 
 # Class AutoPATT Session
 class AutoPATT(object):
@@ -98,8 +100,12 @@ class AutoPATT(object):
             i_mp_start = output.index('Minimal Pairs:')+1
             i_pm_inv_start = output.index('PHONEMIC INVENTORY:')+2
             i_cl_inv = output.index('CLUSTER INVENTORY:')+1
-            i_targ = [
-                x.startswith('TARGETS') for x in output].index(True)+1           
+            try:
+                i_targ = [
+                    x.startswith('TARGETS') for x in output].index(True)+1
+            except ValueError:
+                # No targets found
+                i_targ = None
             i_pt_out = output.index('Phones to monitor:')+1
             i_pm_out = output.index('Phonemes to monitor:')+1
             i_cl_out = output.index('Clusters to monitor:')+1           
@@ -135,7 +141,11 @@ class AutoPATT(object):
             # Get cluster inventory
             self.cluster_inv = output[i_cl_inv].split(',')
             # Get targets
-            self.targets = output[i_targ].split(',')
+            try:
+                self.targets = output[i_targ].split(',')
+            except TypeError:
+                # No targets found
+                self.targets = None
             # Get out phones to monitor
             self.out_phones = output[i_pt_out].split(',')
             # Get out phonemes to monitor
