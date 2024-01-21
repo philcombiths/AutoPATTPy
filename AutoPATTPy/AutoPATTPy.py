@@ -16,6 +16,7 @@ data = import_files(directory_of_outputs, legacy=False)
 data = import_files(directory_needing_repair, legacy=True)
 
 Created on Thu Jul  2 14:43:03 2020
+@modified 2024-01-08
 @author: Philip
 
 """
@@ -171,23 +172,37 @@ class AutoPATT(object):
         return f'AutoPATT object {self.name}'
     
     
-    def var_to_df(self, var, label=None):
+    def var_to_df(self, var, label=None, cells="list"):
         """Converts a variable to a pandas dataframe from an AutoPATT object,
         
         Args: 
             var: a string representing an AutoPATT attribute variable. See AutoPATT
-                Class for available variables.
-            label: optional string name for Series. Default self.name
+                Class for available variables, such as:
+                phonetic_inv, minimal_pairs, phonemic_inv, cluster_inv, targets, 
+                out_phones, out_phonemes, out_clusters
+            label: optional string name for Series. Default self.name+'_'+var
+            cells: optional variable format of variable in output of
+                "list" for a string list in a single cell
+                "segment" for one phone in each cell
         
         Returns:
             dataframe
         """
         if not label:
-            label = self.name   
+            label = self.name+'_'+var
             
         attribute = getattr(self, var)
-        if isinstance(attribute, list):
-            df = pd.Series(attribute, name=label)
+        if cells == "list":
+            if isinstance(attribute, list):
+                df = pd.Series(attribute, name=label)
+            else: df = None
+        else: # cells == "segment"
+            if isinstance(attribute, list):
+                join_string = ' '
+                str_var = join_string.join(seg for seg in attribute)
+                df = pd.Series(str_var, name=label)
+            else:
+                df = None
         return df
 
 
@@ -305,10 +320,11 @@ def import_files(directory, legacy=False, minimal_pairs_repair=False, robust=Fal
     return autopatt_objs    
 
 
-def gen_output(autopatt_dict_left, autopatt_dict_right):
+def gen_output(self):
+    
     """"
-    Generates a dataframe with columns for two sets of AutoPATT data. 
-    Not currently implemented
+    Generates a dataframe with columns for data contained in AutoPATT object 
+    Returns dataframe and saves to csv.
     """
     
     
