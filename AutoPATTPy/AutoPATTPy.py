@@ -143,7 +143,7 @@ class AutoPATT(object):
             self.phonemic_inv = [x for x in self.phonemic_inv if x.strip() != '']
             # Get cluster inventory
             self.cluster_inv = output[i_cl_inv].split(',')
-            if "No targets found" in self.cluster_inv[0]:
+            if "target" in self.cluster_inv[0].lower():
                 self.cluster_inv = []
             # Get targets
             try:
@@ -356,12 +356,9 @@ def export(input, vars = ['phonetic_inv', 'phonemic_inv', 'cluster_inv'], cells=
 ###
     
 if __name__ == '__main__':
-    directory = "/Users/pcombiths/Library/CloudStorage/OneDrive-UniversityofIowa/Projects/Manuscripts/Bilingual Typology Chapter/analysis/CA Bilingualism Chapter/AutoPATT/SSD Sample/New/eng"
+    directory = "/Users/pcombiths/Library/CloudStorage/OneDrive-UniversityofIowa/Projects/Manuscripts/Bilingual Typology Chapter/analysis/CA Bilingualism Chapter/AutoPATT/New Typology Sample/spa"
     import_obj = import_files(directory)
-    export_obj = export(import_obj)
-    
-    pass
-
+    export_obj = export(import_obj, output="autopatt_data_spa.csv")
 
     
     
