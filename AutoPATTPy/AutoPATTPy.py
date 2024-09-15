@@ -15,8 +15,10 @@ data = import_files(directory_of_outputs, legacy=False)
 # generated output
 data = import_files(directory_needing_repair, legacy=True)
 
+# Update for AutoPATT version 0.8
+
 Created on Thu Jul  2 14:43:03 2020
-@modified 2024-01-08
+@modified 2024-09-15
 @author: Philip
 
 """
@@ -84,16 +86,16 @@ class AutoPATT(object):
             output = infile.readlines()
             output = [i.strip().strip(',\n') for i in output]
             output = [i.replace('"', '') for i in output]
-            output = [i for i in output if i]           
+            output = [i for i in output if i]       
             # Use anchor rows to get row indices
             if legacy:
                 pass
             else:
-                i_sesrow_end = output.index('Analysis date:')-2
                 i_date = output.index('Analysis date:')+1
-                i_ver = output.index('Analysis date:')-2
-                i_lang = output.index('Analysis date:')-1
-            if self.name == '1049':
+                i_lang = output.index('Language:')+1
+                i_ver = i_date-6
+                i_sesrow_end = i_ver-1
+            if self.name == 'S104_Tx11_072519': # Debug
                 print('got it)')
                 print('got it')
                 pass
@@ -116,7 +118,7 @@ class AutoPATT(object):
                 pass
             else:
                 self.version = float(output[i_ver].split(' ')[2])
-                self.lang = output[i_lang][output[i_lang].rfind(':')+2:]
+                self.lang = output[i_lang]
                 # Separate rows with session information
                 sesrows = output[:i_sesrow_end]
                 sesrows = sesrows[1::2]
@@ -141,12 +143,14 @@ class AutoPATT(object):
             self.phonemic_inv = [x for x in self.phonemic_inv if x.strip() != '']
             # Get cluster inventory
             self.cluster_inv = output[i_cl_inv].split(',')
+            if "No targets found" in self.cluster_inv[0]:
+                self.cluster_inv = []
             # Get targets
             try:
                 self.targets = output[i_targ].split(',')
             except TypeError:
                 # No targets found
-                self.targets = None
+                self.targets = []
             # Get out phones to monitor
             self.out_phones = output[i_pt_out].split(',')
             # Get out phonemes to monitor
@@ -170,7 +174,7 @@ class AutoPATT(object):
     
     def __repr__(self):
         return f'AutoPATT object {self.name}'
-    
+
     
     def var_to_df(self, var, label=None, cells="list"):
         """Converts a variable to a pandas dataframe from an AutoPATT object,
@@ -327,6 +331,23 @@ def gen_output(self):
     Returns dataframe and saves to csv.
     """
     
+def export(input, vars = ['phonetic_inv', 'phonemic_inv', 'cluster_inv'], cells="segment", output="autopatt_data.csv"):
+    ap_dict = input
+    var_list = []
+    for ap in ap_dict.keys():
+        for v in vars:          
+            try:  
+                var = ap_dict[ap].var_to_df(v, cells="segment")
+                var_list.append(var)
+            except AttributeError:
+                print(f"{v} not found as an AutoPATT variable. Exiting.")
+                exit()
+    df = pd.DataFrame()
+    for v in var_list:
+        df[v.name] = v
+    df.to_csv(output, encoding="utf-8", index=False)
+    print(f"AutoPATT data saved to {os.path.join(os.getcwd(), output)}")
+    return df
     
 ###
 ###
@@ -335,6 +356,9 @@ def gen_output(self):
 ###
     
 if __name__ == '__main__':
+    directory = "/Users/pcombiths/Library/CloudStorage/OneDrive-UniversityofIowa/Projects/Manuscripts/Bilingual Typology Chapter/analysis/CA Bilingualism Chapter/AutoPATT/SSD Sample/New/eng"
+    import_obj = import_files(directory)
+    export_obj = export(import_obj)
     
     pass
 
