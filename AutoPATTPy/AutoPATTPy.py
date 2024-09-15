@@ -356,7 +356,13 @@ def export(input, vars = ['phonetic_inv', 'phonemic_inv', 'cluster_inv'], cells=
 ###
     
 if __name__ == '__main__':
-    directory = "/Users/pcombiths/Library/CloudStorage/OneDrive-UniversityofIowa/Projects/Manuscripts/Bilingual Typology Chapter/analysis/CA Bilingualism Chapter/AutoPATT/New Typology Sample/spa"
+    try:
+        from file_ops.file_dialog import folder_dialog
+        directory = folder_dialog("Specify folder containing AutoPATT files:")
+    except ModuleNotFoundError:
+        print("Directory must be specified in script")
+        exit()
+    # directory = ""
     import_obj = import_files(directory)
     export_obj = export(import_obj, output="autopatt_data_spa.csv")
 
