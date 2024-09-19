@@ -364,7 +364,7 @@ if __name__ == '__main__':
         exit()
     # directory = ""
     import_obj = import_files(directory)
-    export_obj = export(import_obj, output="autopatt_data_spa.csv")
+    export_obj = export(import_obj, output="trev_autopatt_data_spa.csv")
 
     
     
